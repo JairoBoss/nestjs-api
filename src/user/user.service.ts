@@ -10,6 +10,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
 import * as bcrypt from 'bcrypt';
+import { Auth } from '../auth/decorators/auth.decorator';
+import { ValidRoles } from 'src/auth/dto/valid-roles.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { NotFoundException } from '@nestjs/common/exceptions';
+import { ForbiddenException } from '@nestjs/common';
 
 @Injectable()
 export class UserService {
@@ -21,7 +26,7 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    try { 
+    try {
       const { password, ...userData } = createUserDto;
 
       const user = this.userRepository.create({
@@ -39,20 +44,50 @@ export class UserService {
     }
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll(paginationDto: PaginationDto) {
+    const { limit = 10, offset = 0 } = paginationDto;
+
+    const [data, total] = await this.userRepository.findAndCount({
+      take: limit,
+      skip: offset,
+      order: {
+        createdAt: "ASC",
+      },
+    });
+
+    return { data, total };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string, user: User) {
+    const usuario = await this.userRepository.findOneBy({ id });
+
+    if (!usuario)
+      throw new NotFoundException(`Usuario con id: ${id} no encontrado`);
+
+    if (user.roles.includes('super-user' && 'admin')) return usuario;
+
+    if (id !== user.id)
+      throw new ForbiddenException(
+        `${user.fullName} no tiene los permisos necesarios`,
+      );
+
+    return usuario;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto, user: User) {
+    await this.findOne(id, user);
+
+    await this.userRepository.update(id, updateUserDto);
+
+    return { message: `Usuario actualizado` };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    const { affected } = await this.userRepository.delete({ id });
+    if (affected === 0)
+      throw new BadRequestException(`Usuario con id ${id} no encontrado`);
+
+    return { message: 'Usuario eliminado' };
   }
 
   private handleDBErrors(error: any): never {

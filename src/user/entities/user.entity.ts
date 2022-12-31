@@ -2,8 +2,10 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
+  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -25,6 +27,12 @@ export class User {
 
   @Column({ type: 'text', array: true, default: ['user'] })
   roles: string[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updateAt: Date;
 
   @BeforeInsert()
   checkEmail() {

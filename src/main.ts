@@ -2,13 +2,16 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
+import { SeedService } from './seed/seed.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   const logger = new Logger('Bootstrap')
   
-  // Forzar a usar valores estrictos de los dto
+  // TODO : Acompletar el seed y hacer un metodo estatiuco para no instanciar la clase
+  // Y poner el logger chido
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -27,13 +27,15 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true },
+      select: { email: true, password: true, id: true, fullName: true },
     });
 
     if (!user) throw new UnauthorizedException('Credenciales incorrectas');
 
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Credenciales incorrectas');
+
+    delete user.password
 
     return { ...user, token: this.getJwtToken({ id: user.id }) };
   }
